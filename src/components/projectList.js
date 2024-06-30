@@ -5,7 +5,14 @@ import axios from "axios";
 import ApiConfig from "../utils/url";
 import dateTransform from "../utils/dataTransform";
 
-const FilterType = ["Priority", "Category", "Reason", "Division", "Department", "Location"];
+const FilterType = [
+  "Priority",
+  "Category",
+  "Reason",
+  "Division",
+  "Department",
+  "Location",
+];
 
 function ProjectList() {
   const [projects, setProjects] = useState([]);
@@ -19,13 +26,13 @@ function ProjectList() {
     if (endIndex >= projects.length) return;
     setStartIndex(startIndex + 5);
     setEndIndex(endIndex + 5);
-  }
+  };
 
   const handleDecrement = () => {
     if (startIndex <= 0) return;
     setStartIndex(startIndex - 5);
     setEndIndex(endIndex - 5);
-  }
+  };
 
   // Fetch project list
   const getProject = async () => {
@@ -44,7 +51,10 @@ function ProjectList() {
   // Update project status
   const handleStatusChange = async (id, status) => {
     try {
-      const response = await axios.put(ApiConfig.API_UPDATE_PROJECT_STATUS_URL, { id, status });
+      const response = await axios.put(
+        ApiConfig.API_UPDATE_PROJECT_STATUS_URL,
+        { id, status }
+      );
       console.log(response.data);
       setProjects((prevProjects) =>
         prevProjects.map((project) =>
@@ -67,16 +77,45 @@ function ProjectList() {
     // Toggle sort order
     setSortOrder((prevSortOrder) => (prevSortOrder === "asc" ? "desc" : "asc"));
   };
-
   const sortedProjects = [...projects].sort((a, b) => {
-    if (a[sortField] < b[sortField]) {
-      return sortOrder === "asc" ? -1 : 1;
+    switch (sortField) {
+      case "Priority":
+        // Custom order: Medium, Low, High
+        const priorityOrder = { Medium: 1, Low: 2, High: 0 };
+        const priorityComparison =
+          priorityOrder[a.priority] - priorityOrder[b.priority];
+        return sortOrder === "asc" ? priorityComparison : -priorityComparison;
+      // Add cases for other fields as needed
+      case "Category":
+        return sortOrder === "asc"
+          ? a.category.localeCompare(b.category)
+          : b.category.localeCompare(a.category);
+      case "Reason":
+        return sortOrder === "asc"
+          ? a.reason.localeCompare(b.reason)
+          : b.reason.localeCompare(a.reason);
+      case "Division":
+        return sortOrder === "asc"
+          ? a.division.localeCompare(b.division)
+          : b.division.localeCompare(a.division);
+      case "Department":
+        return sortOrder === "asc"
+          ? a.department.localeCompare(b.department)
+          : b.department.localeCompare(a.department);
+      case "Location":
+        return sortOrder === "asc"
+          ? a.location.localeCompare(b.location)
+          : b.location.localeCompare(a.location);
+      case "StartDate":
+        return sortOrder === "asc"
+          ? new Date(a.startDate) - new Date(b.startDate)
+          : new Date(b.startDate) - new Date(a.startDate);
+      default:
+        return 0;
     }
-    if (a[sortField] > b[sortField]) {
-      return sortOrder === "asc" ? 1 : -1;
-    }
-    return 0;
   });
+
+  console.log(sortedProjects); // Add this line to inspect sorted projects
 
   const filteredProjects = sortedProjects.filter((project) =>
     Object.values(project).some((value) =>
@@ -103,12 +142,19 @@ function ProjectList() {
           </div>
           <div className="block md:hidden">
             {/* Open the modal using document.getElementById('ID').showModal() method */}
-            <button className="text-gray-400" onClick={() => document.getElementById('my_modal_3').showModal()}><AlignLeft /></button>
+            <button
+              className="text-gray-400"
+              onClick={() => document.getElementById("my_modal_3").showModal()}
+            >
+              <AlignLeft />
+            </button>
             <dialog id="my_modal_3" className="modal">
               <div className="modal-box">
                 <form method="dialog">
                   {/* if there is a button in form, it will close the modal */}
-                  <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                  <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                    ✕
+                  </button>
                 </form>
                 {FilterType.map((type) => (
                   <p key={type}>{type}</p>
@@ -124,8 +170,16 @@ function ProjectList() {
                 value={sortField}
                 onChange={handleSortChange}
               >
-                {FilterType.map((type) => (
-                  <option key={type}>{type}</option>
+                {[
+                  "Priority",
+                  "Category",
+                  "Reason",
+                  "Division",
+                  "Department",
+                  "Location",
+                  "StartDate",
+                ].map((field) => (
+                  <option key={field}>{field}</option>
                 ))}
               </select>
             </label>
@@ -137,29 +191,72 @@ function ProjectList() {
           {filteredProjects.map((project) => (
             <div key={project._id} className="bg-white p-4 mb-4 rounded ">
               <div className="flex justify-between mb-4">
-                <div >
+                <div>
                   <h2 className="font-semibold">{project.projectTheme}</h2>
-                  <p className="text-sm text-gray-400 font-normal">{dateTransform(project.startDate)} to {dateTransform(project.endDate)}</p>
+                  <p className="text-sm text-gray-400 font-normal">
+                    {dateTransform(project.startDate)} to{" "}
+                    {dateTransform(project.endDate)}
+                  </p>
                 </div>
                 <div>
                   <p className="font-medium text-sm">{project.status}</p>
                 </div>
               </div>
               <div>
-                <p><span className="text-sm text-gray-400">Reason: </span><span className="text-sm">{project.reason}</span></p>
-                <p><span><span className="text-sm text-gray-400">Type: </span><span className="text-sm">{project.type}</span></span>
-                  <span> <span className="text-sm text-gray-400">Category: </span><span className="text-sm">{project.category}</span></span>
+                <p>
+                  <span className="text-sm text-gray-400">Reason: </span>
+                  <span className="text-sm">{project.reason}</span>
                 </p>
-                <p><span><span className="text-sm text-gray-400">Div: </span><span className="text-sm">{project.division}</span></span>
-                  <span> <span className="text-sm text-gray-400">Dept: </span><span className="text-sm">{project.department}</span></span>
+                <p>
+                  <span>
+                    <span className="text-sm text-gray-400">Type: </span>
+                    <span className="text-sm">{project.type}</span>
+                  </span>
+                  <span>
+                    {" "}
+                    <span className="text-sm text-gray-400">Category: </span>
+                    <span className="text-sm">{project.category}</span>
+                  </span>
                 </p>
-                <p><span className="text-sm text-gray-400">Location: </span><span className="text-sm">{project.location}</span></p>
-                <p><span className="text-sm text-gray-400">Priority: </span><span className="text-sm">{project.priority}</span></p>
+                <p>
+                  <span>
+                    <span className="text-sm text-gray-400">Div: </span>
+                    <span className="text-sm">{project.division}</span>
+                  </span>
+                  <span>
+                    {" "}
+                    <span className="text-sm text-gray-400">Dept: </span>
+                    <span className="text-sm">{project.department}</span>
+                  </span>
+                </p>
+                <p>
+                  <span className="text-sm text-gray-400">Location: </span>
+                  <span className="text-sm">{project.location}</span>
+                </p>
+                <p>
+                  <span className="text-sm text-gray-400">Priority: </span>
+                  <span className="text-sm">{project.priority}</span>
+                </p>
               </div>
               <div className="flex justify-around items-center gap-x-4 mt-4">
-                <button className="bg-primary text-white w-24 h-8 rounded-2xl" onClick={() => handleStatusChange(project._id, "Running")}>Start</button>
-                <button className="w-24 h-8 rounded-2xl text-primary border-primary border" onClick={() => handleStatusChange(project._id, "Closed")}>Close</button>
-                <button className="w-24 h-8 rounded-2xl text-primary border-primary border" onClick={() => handleStatusChange(project._id, "Cancelled")}>Cancel</button>
+                <button
+                  className="bg-primary text-white w-24 h-8 rounded-2xl"
+                  onClick={() => handleStatusChange(project._id, "Running")}
+                >
+                  Start
+                </button>
+                <button
+                  className="w-24 h-8 rounded-2xl text-primary border-primary border"
+                  onClick={() => handleStatusChange(project._id, "Closed")}
+                >
+                  Close
+                </button>
+                <button
+                  className="w-24 h-8 rounded-2xl text-primary border-primary border"
+                  onClick={() => handleStatusChange(project._id, "Cancelled")}
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           ))}
@@ -170,13 +267,17 @@ function ProjectList() {
           <table className="min-w-full bg-white border-gray-200 rounded-md hidden md:block">
             <thead>
               <tr className="bg-gray-200 text-left text-sm font-medium text-gray-700">
-                <th className="px-6 py-3 border-b border-gray-200">Project Theme</th>
+                <th className="px-6 py-3 border-b border-gray-200">
+                  Project Theme
+                </th>
                 <th className="px-6 py-3 border-b border-gray-200">Reason</th>
                 <th className="px-6 py-3 border-b border-gray-200">Type</th>
                 <th className="px-6 py-3 border-b border-gray-200">Division</th>
                 <th className="px-6 py-3 border-b border-gray-200">Category</th>
                 <th className="px-6 py-3 border-b border-gray-200">Priority</th>
-                <th className="px-6 py-3 border-b border-gray-200">Department</th>
+                <th className="px-6 py-3 border-b border-gray-200">
+                  Department
+                </th>
                 <th className="px-6 py-3 border-b border-gray-200">Location</th>
                 <th className="px-6 py-3 border-b border-gray-200">Status</th>
                 <th className="px-6 py-3 border-b border-gray-200"></th>
@@ -187,25 +288,62 @@ function ProjectList() {
             <tbody className="text-sm">
               {filteredProjects.slice(startIndex, endIndex).map((project) => (
                 <tr key={project._id}>
-                  <td className="w-80 px-0 py-4 border-b border-gray-200">{project.projectTheme}
-                    <p className="text-sm  text-gray-400 font-normal">{dateTransform(project.startDate)} to {dateTransform(project.endDate)}</p>
+                  <td className="w-80 px-0 py-4 border-b border-gray-200">
+                    {project.projectTheme}
+                    <p className="text-sm  text-gray-400 font-normal">
+                      {dateTransform(project.startDate)} to{" "}
+                      {dateTransform(project.endDate)}
+                    </p>
                   </td>
-                  <td className="px-6 py-4 border-b border-gray-200">{project.reason}</td>
-                  <td className="px-6 py-4 border-b border-gray-200">{project.type}</td>
-                  <td className="px-6 py-4 border-b border-gray-200">{project.division}</td>
-                  <td className="px-6 py-4 border-b border-gray-200">{project.category}</td>
-                  <td className="px-6 py-4 border-b border-gray-200">{project.priority}</td>
-                  <td className="px-6 py-4 border-b border-gray-200">{project.department}</td>
-                  <td className="px-6 py-4 border-b border-gray-200">{project.location}</td>
-                  <td className="px-6 py-4 border-b border-gray-200">{project.status}</td>
-                  <td className="px-1 py-4 border-b border-gray-200">
-                    <button className="bg-primary text-white w-20 h-8 rounded-2xl" onClick={() => handleStatusChange(project._id, "Running")}>Start</button>
+                  <td className="px-6 py-4 border-b border-gray-200">
+                    {project.reason}
+                  </td>
+                  <td className="px-6 py-4 border-b border-gray-200">
+                    {project.type}
+                  </td>
+                  <td className="px-6 py-4 border-b border-gray-200">
+                    {project.division}
+                  </td>
+                  <td className="px-6 py-4 border-b border-gray-200">
+                    {project.category}
+                  </td>
+                  <td className="px-6 py-4 border-b border-gray-200">
+                    {project.priority}
+                  </td>
+                  <td className="px-6 py-4 border-b border-gray-200">
+                    {project.department}
+                  </td>
+                  <td className="px-6 py-4 border-b border-gray-200">
+                    {project.location}
+                  </td>
+                  <td className="px-6 py-4 border-b border-gray-200">
+                    {project.status}
                   </td>
                   <td className="px-1 py-4 border-b border-gray-200">
-                    <button className="w-20 h-8 rounded-2xl text-primary border-primary border " onClick={() => handleStatusChange(project._id, "Closed")}>Close</button>
+                    <button
+                      className="bg-primary text-white w-20 h-8 rounded-2xl"
+                      onClick={() => handleStatusChange(project._id, "Running")}
+                    >
+                      Start
+                    </button>
                   </td>
                   <td className="px-1 py-4 border-b border-gray-200">
-                    <button className="w-20 h-8 rounded-2xl text-primary border-primary border " onClick={() => handleStatusChange(project._id, "Cancelled")}>Cancel</button>
+                    <button
+                      className="w-20 h-8 rounded-2xl text-primary border-primary border "
+                      onClick={() => handleStatusChange(project._id, "Closed")}
+                    >
+                      Close
+                    </button>
+                  </td>
+                  <td className="px-1 py-4 border-b border-gray-200">
+                    <button
+                      className="w-20 h-8 rounded-2xl text-primary border-primary border "
+                      onClick={() =>
+                        handleStatusChange(project._id, "Cancelled")
+                      }
+                    >
+                      Cancel
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -213,8 +351,18 @@ function ProjectList() {
           </table>
 
           <div className="fixed bottom-4 ">
-            <button className="btn btn-ghost w-20 h-8 rounded-2xl" onClick={handleDecrement}>Prev</button>
-            <button className="btn btn-ghost w-20 h-8 rounded-2xl" onClick={handleIncrement}>Next</button>
+            <button
+              className="btn btn-ghost w-20 h-8 rounded-2xl"
+              onClick={handleDecrement}
+            >
+              Prev
+            </button>
+            <button
+              className="btn btn-ghost w-20 h-8 rounded-2xl"
+              onClick={handleIncrement}
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>
